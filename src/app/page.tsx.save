@@ -101,7 +101,7 @@ export default function HomePage() {
 
   return (
     <main className="min-h-screen bg-slate-950 text-slate-50 flex items-center justify-center px-4">
-      <div className="max-w-5xl w-full space-y-8 py-10">
+      <div className="max-w-5xl w-full space-y-8">
         {/* HEADER */}
         <header className="text-center space-y-3">
           <h1 className="text-4xl md:text-5xl font-bold">
@@ -236,39 +236,7 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* DASHBOARD CARDS: SETTINGS + VIEWER DISCOUNTS + GLOBAL DROPS */}
-        {login ? (
-          <section className="grid md:grid-cols-3 gap-6">
-            <StreamerSettingsCard login={login} />
-            <RecentDropsCard
-              login={login}
-              limit={10}
-              kind="viewer"
-              title="Recent discounts"
-            />
-            <RecentDropsCard
-              login={login}
-              limit={10}
-              kind="global"
-              title="Recent global drops"
-            />
-          </section>
-        ) : (
-          <section className="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 text-sm text-slate-300">
-            <div className="font-semibold mb-1">Dashboard locked</div>
-            <p>
-              Connect with Twitch first to unlock your Dropify settings, recent
-              discounts and drop activity.
-            </p>
-          </section>
-        )}
-
-        {/* (Optional) You can later put RecentRedemptionsCard in another row */}
-        {/* {login && (
-          <section>
-            <RecentRedemptionsCard login={login} limit={10} />
-          </section>
-        )} */}
+               )}
       </div>
     </main>
   );
