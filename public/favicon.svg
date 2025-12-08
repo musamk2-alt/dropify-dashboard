@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+  <defs>
+    <radialGradient id="dropifyGrad" cx="30%" cy="25%" r="100%">
+      <stop offset="0%" stop-color="#b57bff"/>
+      <stop offset="45%" stop-color="#8b5cff"/>
+      <stop offset="100%" stop-color="#32dec4"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Transparent background (nothing here) -->
+
+  <!-- Gradient circle -->
+  <circle cx="128" cy="128" r="112" fill="url(#dropifyGrad)"/>
+
+  <!-- White "D" -->
+  <text
+    x="50%"
+    y="50%"
+    text-anchor="middle"
+    dominant-baseline="central"
+    font-family="system-ui, -apple-system, BlinkMacSystemFont, 'SF Pro Text', Inter, sans-serif"
+    font-size="128"
+    font-weight="700"
+    fill="#ffffff"
+  >
+    D
+  </text>
+</svg>

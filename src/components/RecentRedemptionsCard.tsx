@@ -1,19 +1,31 @@
-// /opt/dropify/dropify-dashboard/src/components/RecentRedemptionsCard.tsx
 "use client";
 
 import React, { useEffect, useState } from "react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "./ui/card";
 
-type Drop = {
+const API_URL =
+  process.env.NEXT_PUBLIC_API_URL || "https://api.dropifybot.com";
+
+type Redemption = {
   id: string;
-  viewerLogin: string;
-  viewerDisplayName?: string;
+  orderNumber: string;
+  orderId: string;
   discountCode: string;
-  discountType?: string | null;
-  discountValue?: number | null;
+  discountAmount: string; // comes back as string in your API
+  discountType: "percentage" | "fixed_amount" | string;
+  customerEmail: string;
+  customerId: string;
+  shopifyStoreDomain: string;
   createdAt: string;
 };
 
-interface RecentDropsCardProps {
+interface RecentRedemptionsCardProps {
   login: string;
   limit?: number;
 }
@@ -30,11 +42,11 @@ function formatDateTime(iso: string) {
   });
 }
 
-const RecentDropsCard: React.FC<RecentDropsCardProps> = ({
+const RecentRedemptionsCard: React.FC<RecentRedemptionsCardProps> = ({
   login,
   limit = 10,
 }) => {
-  const [drops, setDrops] = useState<Drop[]>([]);
+  const [rows, setRows] = useState<Redemption[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -48,9 +60,10 @@ const RecentDropsCard: React.FC<RecentDropsCardProps> = ({
         setLoading(true);
         setError(null);
 
-        const url = `https://api.dropifybot.com/api/drops/${encodeURIComponent(
+        // Your real API: /api/redemptions/:login?limit=10
+        const url = `${API_URL}/api/redemptions/${encodeURIComponent(
           login
-        )}/recent?limit=${limit}`;
+        )}?limit=${limit}`;
 
         const res = await fetch(url, {
           method: "GET",
@@ -63,13 +76,15 @@ const RecentDropsCard: React.FC<RecentDropsCardProps> = ({
         }
 
         const data = await res.json();
-        if (!data.ok) throw new Error(data.error || "Failed to load drops");
+        if (!data.redemptions) {
+          throw new Error("Failed to load redemptions.");
+        }
 
-        setDrops(data.drops || []);
+        setRows(data.redemptions as Redemption[]);
       } catch (err: any) {
         if (err.name === "AbortError") return;
-        console.error("[RecentDropsCard] Failed to load", err);
-        setError("Failed to load recent drops.");
+        console.error("[RecentRedemptionsCard] Failed to load", err);
+        setError("Failed to load recent redemptions.");
       } finally {
         setLoading(false);
       }
@@ -83,87 +98,104 @@ const RecentDropsCard: React.FC<RecentDropsCardProps> = ({
   }, [login, limit]);
 
   return (
-    <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 space-y-4">
-      {/* Header */}
-      <div className="flex items-center justify-between gap-4">
-        <div className="flex items-center gap-2 text-sm font-semibold text-slate-200">
-          <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-violet-600 text-white text-xs font-bold">
-            🎁
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between gap-4">
+        <div className="flex items-center gap-2">
+          <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-emerald-500/90 text-xs font-bold text-white shadow-lg shadow-emerald-500/40">
+            ✅
           </span>
-          Recent drops
+          <CardTitle className="text-sm sm:text-base">
+            Recent redemptions
+          </CardTitle>
         </div>
-        <span className="text-xs text-slate-400">Showing last {limit}</span>
-      </div>
+        <CardDescription className="text-[11px]">
+          Showing last {limit}
+        </CardDescription>
+      </CardHeader>
 
-      {/* States */}
-      {loading && (
-        <p className="text-sm text-slate-400">Loading recent drops…</p>
-      )}
+      <CardContent className="space-y-4 text-sm">
+        {/* States */}
+        {loading && (
+          <p className="text-sm text-slate-400">
+            Loading recent redemptions…
+          </p>
+        )}
 
-      {!loading && error && (
-        <p className="text-sm text-red-400">{error}</p>
-      )}
+        {!loading && error && (
+          <p className="text-sm text-red-400">{error}</p>
+        )}
 
-      {!loading && !error && drops.length === 0 && (
-        <p className="text-sm text-slate-400">
-          No drops generated yet. Viewers can trigger them using{" "}
-          <code className="text-[10px]">!discount</code> or the streamer using{" "}
-          <code className="text-[10px]">!drop &lt;percent&gt;</code>.
-        </p>
-      )}
+        {!loading && !error && rows.length === 0 && (
+          <p className="text-sm text-slate-400">
+            No redemptions yet. Once viewers start using their codes in your
+            Shopify store, they&apos;ll show up here.
+          </p>
+        )}
 
-      {/* List */}
-      {!loading && !error && drops.length > 0 && (
-        <div className="space-y-3">
-          {drops.map((d, idx) => (
-            <div
-              key={d.id}
-              className={`rounded-xl px-3 py-3 bg-slate-950/40 border border-slate-800/60 ${
-                idx === 0 ? "shadow-[0_0_0_1px_rgba(139,92,246,0.35)]" : ""
-              }`}
-            >
-              <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
-                {/* Left: viewer info */}
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2 text-sm">
-                    <span className="text-slate-300 font-semibold">
-                      {d.viewerDisplayName || d.viewerLogin}
-                    </span>
-                    <span className="inline-flex items-center rounded-full bg-slate-900 px-2 py-0.5 text-[11px] uppercase tracking-wide text-slate-400">
-                      Viewer
-                    </span>
+        {/* List */}
+        {!loading && !error && rows.length > 0 && (
+          <div className="space-y-3">
+            {rows.map((r, idx) => {
+              const isPercentage =
+                String(r.discountType).toLowerCase() === "percentage";
+
+              return (
+                <div
+                  key={r.id}
+                  className={`rounded-xl border border-slate-800/70 bg-slate-950/60 px-3 py-3 transition-colors hover:border-emerald-500/60 ${
+                    idx === 0 ? "shadow-[0_0_0_1px_rgba(34,197,94,0.35)]" : ""
+                  }`}
+                >
+                  <div className="flex flex-col gap-1">
+                    {/* Top row: customer + time */}
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 text-sm min-w-0">
+                        <span className="truncate font-semibold text-slate-200">
+                          {r.customerEmail}
+                        </span>
+                        <span className="inline-flex items-center rounded-full bg-slate-900 px-2 py-0.5 text-[11px] uppercase tracking-wide text-slate-400">
+                          Customer
+                        </span>
+                      </div>
+                      <span className="shrink-0 text-[11px] text-slate-500">
+                        {formatDateTime(r.createdAt)}
+                      </span>
+                    </div>
+
+                    {/* Order + store */}
+                    <div className="text-[11px] text-slate-500 flex flex-wrap gap-2">
+                      <span>Order #{r.orderNumber}</span>
+                      <span className="hidden sm:inline">•</span>
+                      <span className="truncate">
+                        {r.shopifyStoreDomain}
+                      </span>
+                    </div>
+
+                    {/* Code + discount */}
+                    <div className="mt-2 flex flex-wrap items-baseline justify-between gap-2">
+                      <div className="space-y-1">
+                        <div className="text-[11px] uppercase tracking-wide text-slate-500">
+                          Code
+                        </div>
+                        <code className="font-mono text-xs text-emerald-300">
+                          {r.discountCode}
+                        </code>
+                      </div>
+                      <div className="text-[11px] text-slate-400">
+                        {isPercentage
+                          ? `${r.discountAmount}% off`
+                          : `${r.discountAmount} off`}
+                      </div>
+                    </div>
                   </div>
-                  <div className="text-xs text-slate-500">@{d.viewerLogin}</div>
                 </div>
-
-                {/* Middle: code */}
-                <div className="space-y-1 min-w-[150px]">
-                  <div className="text-xs uppercase tracking-wide text-slate-500">
-                    Code
-                  </div>
-                  <code className="font-mono text-xs text-violet-300">
-                    {d.discountCode}
-                  </code>
-                  {d.discountValue != null && d.discountType && (
-                    <p className="text-[11px] text-slate-400">
-                      {d.discountType === "percentage"
-                        ? `${d.discountValue}% off`
-                        : `${d.discountValue} off`}
-                    </p>
-                  )}
-                </div>
-
-                {/* Right: time */}
-                <div className="text-xs text-slate-500 min-w-[120px] md:text-right">
-                  {formatDateTime(d.createdAt)}
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
+              );
+            })}
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 };
 
-export default RecentDropsCard;
+export default RecentRedemptionsCard;
