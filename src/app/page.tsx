@@ -1,10 +1,12 @@
 "use client";
 
+
 import { useEffect, useState } from "react";
 
 import RecentRedemptionsCard from "../components/RecentRedemptionsCard";
 import StreamerSettingsCard from "../components/StreamerSettingsCard";
 import RecentDropsCard from "../components/RecentDropsCard";
+import StatsCard from "../components/StatsCard";
 
 import { DashboardShell } from "../components/layout/dashboard-shell";
 import { DashboardNavbar } from "../components/layout/dashboard-navbar";
