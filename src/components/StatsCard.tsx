@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React from "react";
 import {
   Card,
   CardContent,
@@ -8,22 +8,12 @@ import {
   CardHeader,
   CardTitle,
 } from "./ui/card";
-
-const API_URL =
-  process.env.NEXT_PUBLIC_API_URL || "https://api.dropifybot.com";
-
-type Stats = {
-  dropsLast24h: number;
-  redemptionsLast24h: number;
-  estimatedRevenueLast24h: number;
-  totalDropsLifetime: number;
-  totalRedemptionsLifetime: number;
-  conversionRateLast24h: number;
-  lastUpdated?: string;
-};
+import type { Stats } from "@/app/page";
 
 interface StatsCardProps {
   login: string | null;
+  stats: Stats | null;
+  loading: boolean;
 }
 
 function formatPercent(value: number) {
@@ -31,57 +21,18 @@ function formatPercent(value: number) {
   return `${(value * 100).toFixed(1)}%`;
 }
 
+function formatNumber(value: number) {
+  if (!isFinite(value)) return "0";
+  return value.toLocaleString(undefined, { maximumFractionDigits: 0 });
+}
+
 function formatCurrency(value: number) {
   if (!value || !isFinite(value)) return "—";
-  // Keep it generic since stores can be any currency
   return value.toFixed(2);
 }
 
-const StatsCard: React.FC<StatsCardProps> = ({ login }) => {
-  const [stats, setStats] = useState<Stats | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!login) return;
-
-    const controller = new AbortController();
-
-    async function load() {
-      try {
-        setLoading(true);
-        setError(null);
-
-        const res = await fetch(
-          `${API_URL}/api/stats/${encodeURIComponent(login || "")}`,
-          {
-            method: "GET",
-            signal: controller.signal,
-          }
-        );
-
-        if (!res.ok) {
-          const text = await res.text();
-          throw new Error(`API error (${res.status}): ${text}`);
-        }
-
-        const data = await res.json();
-        if (!data.ok) throw new Error(data.error || "Failed to load stats");
-
-        setStats(data.stats || null);
-      } catch (err: any) {
-        if (err.name === "AbortError") return;
-        console.error("[StatsCard] Failed to load", err);
-        setError("Failed to load stats.");
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    load();
-
-    return () => controller.abort();
-  }, [login]);
+const StatsCard: React.FC<StatsCardProps> = ({ login, stats, loading }) => {
+  const hasData = !!stats;
 
   return (
     <Card className="h-full">
@@ -95,14 +46,14 @@ const StatsCard: React.FC<StatsCardProps> = ({ login }) => {
               Stream performance
             </CardTitle>
             <CardDescription className="text-[11px]">
-              How viewers are turning into orders.
+              How your drops are turning into orders.
             </CardDescription>
           </div>
         </div>
-        {stats?.lastUpdated && (
+        {stats?.period?.now && (
           <span className="text-[10px] text-slate-500">
             Updated{" "}
-            {new Date(stats.lastUpdated).toLocaleTimeString(undefined, {
+            {new Date(stats.period.now).toLocaleTimeString(undefined, {
               hour: "2-digit",
               minute: "2-digit",
             })}
@@ -115,43 +66,43 @@ const StatsCard: React.FC<StatsCardProps> = ({ login }) => {
           <p className="text-sm text-slate-400">Loading stats…</p>
         )}
 
-        {!loading && error && (
-          <p className="text-sm text-red-400">{error}</p>
-        )}
-
-        {!loading && !error && !stats && (
+        {!loading && !hasData && (
           <p className="text-sm text-slate-400">
-            No data yet. Connect Shopify and let viewers try{" "}
-            <code className="text-[10px]">!discount</code> during your next
-            stream.
+            No stats yet for{" "}
+            <span className="font-mono text-[11px] text-slate-100">
+              {login || "this channel"}
+            </span>
+            . Once viewers start using{" "}
+            <code className="text-[10px]">!discount</code> and those codes are
+            redeemed on Shopify, we&apos;ll show performance here.
           </p>
         )}
 
-        {!loading && !error && stats && (
+        {!loading && hasData && stats && (
           <>
-            {/* Top row: today focus */}
+            {/* Today focus */}
             <div className="grid grid-cols-3 gap-3">
               <div className="rounded-xl border border-slate-800/70 bg-slate-950/60 px-3 py-2.5">
                 <div className="text-[11px] text-slate-400 uppercase tracking-wide">
                   Drops today
                 </div>
                 <div className="mt-1 text-xl font-semibold text-slate-50">
-                  {stats.dropsLast24h}
+                  {formatNumber(stats.dropsToday)}
                 </div>
                 <div className="mt-0.5 text-[11px] text-slate-500">
-                  Viewers who asked for a code.
+                  Viewers who claimed a code.
                 </div>
               </div>
 
               <div className="rounded-xl border border-slate-800/70 bg-slate-950/60 px-3 py-2.5">
                 <div className="text-[11px] text-slate-400 uppercase tracking-wide">
-                  Orders with Dropify
+                  Orders today
                 </div>
                 <div className="mt-1 text-xl font-semibold text-slate-50">
-                  {stats.redemptionsLast24h}
+                  {formatNumber(stats.redemptionsToday)}
                 </div>
                 <div className="mt-0.5 text-[11px] text-slate-500">
-                  Shopify orders using your codes.
+                  Shopify orders using Dropify codes.
                 </div>
               </div>
 
@@ -160,49 +111,37 @@ const StatsCard: React.FC<StatsCardProps> = ({ login }) => {
                   Conversion rate
                 </div>
                 <div className="mt-1 text-xl font-semibold text-slate-50">
-                  {formatPercent(stats.conversionRateLast24h)}
+                  {formatPercent(stats.redemptionRate)}
                 </div>
                 <div className="mt-0.5 text-[11px] text-slate-500">
-                  Orders / drops in the last 24h.
+                  Orders / drops for today.
                 </div>
               </div>
             </div>
 
-            {/* Second row: lifetime view */}
-            <div className="grid grid-cols-3 gap-3">
+            {/* Value view */}
+            <div className="grid grid-cols-2 gap-3">
               <div className="rounded-xl border border-slate-800/70 bg-slate-950/60 px-3 py-2.5">
                 <div className="text-[11px] text-slate-400 uppercase tracking-wide">
-                  Lifetime drops
+                  Discount given today
                 </div>
                 <div className="mt-1 text-lg font-semibold text-slate-50">
-                  {stats.totalDropsLifetime}
+                  {formatCurrency(stats.discountValueToday)}
                 </div>
                 <div className="mt-0.5 text-[11px] text-slate-500">
-                  Codes Dropify has created.
+                  Total discount value applied today.
                 </div>
               </div>
 
               <div className="rounded-xl border border-slate-800/70 bg-slate-950/60 px-3 py-2.5">
                 <div className="text-[11px] text-slate-400 uppercase tracking-wide">
-                  Lifetime orders
+                  Revenue influenced (24h)
                 </div>
                 <div className="mt-1 text-lg font-semibold text-slate-50">
-                  {stats.totalRedemptionsLifetime}
+                  {formatCurrency(stats.revenue24h)}
                 </div>
                 <div className="mt-0.5 text-[11px] text-slate-500">
-                  Orders using Dropify discounts.
-                </div>
-              </div>
-
-              <div className="rounded-xl border border-slate-800/70 bg-slate-950/60 px-3 py-2.5">
-                <div className="text-[11px] text-slate-400 uppercase tracking-wide">
-                  Discount value (24h)
-                </div>
-                <div className="mt-1 text-lg font-semibold text-slate-50">
-                  {formatCurrency(stats.estimatedRevenueLast24h)}
-                </div>
-                <div className="mt-0.5 text-[11px] text-slate-500">
-                  Total discount given in the last 24h.
+                  Total discount value in the last 24 hours.
                 </div>
               </div>
             </div>
@@ -210,8 +149,8 @@ const StatsCard: React.FC<StatsCardProps> = ({ login }) => {
             <p className="text-[11px] text-slate-500">
               Dropify tracks how often viewers claim codes (
               <code className="text-[10px]">!discount</code>) and how often
-              those codes turn into Shopify orders. Use this card to see if
-              your drops are actually driving sales.
+              those codes turn into Shopify orders. Use this to see if your
+              drops are actually driving sales, not just chat spam.
             </p>
           </>
         )}

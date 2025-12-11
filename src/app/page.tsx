@@ -1,12 +1,12 @@
 "use client";
 
-
 import { useEffect, useState } from "react";
 
 import RecentRedemptionsCard from "../components/RecentRedemptionsCard";
 import StreamerSettingsCard from "../components/StreamerSettingsCard";
 import RecentDropsCard from "../components/RecentDropsCard";
 import StatsCard from "../components/StatsCard";
+import PlanUsageCard from "../components/PlanUsageCard";
 
 import { DashboardShell } from "../components/layout/dashboard-shell";
 import { DashboardNavbar } from "../components/layout/dashboard-navbar";
@@ -34,7 +34,7 @@ type StreamerInfo = {
   shopifyApiVersion?: string | null;
 };
 
-type Stats = {
+export type Stats = {
   dropsToday: number;
   redemptionsToday: number;
   redemptionRate: number; // 0–1
@@ -184,6 +184,7 @@ export default function HomePage() {
   };
 
   const hasTestDrop = stats && stats.dropsToday > 0;
+  const needsOnboarding = !twitchConnected || !shopifyConnected || !hasTestDrop;
 
   const navbarLogin = streamer?.twitchLogin ?? login;
   const navbarDisplayName = streamer?.displayName ?? null;
@@ -199,6 +200,95 @@ export default function HomePage() {
             discounts in real time when viewers trigger commands like{" "}
             <span className="font-mono text-[11px] text-slate-100">!drop</span>.
           </p>
+
+          {/* GETTING STARTED BANNER */}
+          {needsOnboarding && (
+            <section className="rounded-2xl border border-violet-500/30 bg-gradient-to-r from-violet-950/60 via-slate-950 to-slate-950 px-4 py-4 sm:px-6 sm:py-5 shadow-[0_0_0_1px_rgba(139,92,246,0.45)]">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-violet-300">
+                    Getting started
+                  </p>
+                  <p className="mt-1 text-xs sm:text-sm text-slate-200">
+                    Follow these three steps to see your first discounts and
+                    orders show up live.
+                  </p>
+                </div>
+
+                <div className="mt-2 flex flex-wrap gap-2 sm:mt-0 sm:justify-end">
+                  {/* Step 1 */}
+                  <button
+                    type="button"
+                    onClick={handleConnectTwitch}
+                    className={`group inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-[11px] font-medium transition ${
+                      twitchConnected
+                        ? "bg-emerald-500/10 text-emerald-200"
+                        : "bg-slate-900 text-slate-200 hover:bg-slate-800"
+                    }`}
+                  >
+                    <span
+                      className={`flex h-4 w-4 items-center justify-center rounded-full text-[10px] ${
+                        twitchConnected
+                          ? "bg-emerald-500/80 text-slate-950"
+                          : "bg-slate-700 text-slate-200"
+                      }`}
+                    >
+                      {twitchConnected ? "✓" : "1"}
+                    </span>
+                    <span>Connect Twitch</span>
+                  </button>
+
+                  {/* Step 2 */}
+                  <button
+                    type="button"
+                    onClick={handleConnectShopify}
+                    className={`group inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-[11px] font-medium transition ${
+                      shopifyConnected
+                        ? "bg-emerald-500/10 text-emerald-200"
+                        : "bg-slate-900 text-slate-200 hover:bg-slate-800"
+                    }`}
+                  >
+                    <span
+                      className={`flex h-4 w-4 items-center justify-center rounded-full text-[10px] ${
+                        shopifyConnected
+                          ? "bg-emerald-500/80 text-slate-950"
+                          : "bg-slate-700 text-slate-200"
+                      }`}
+                    >
+                      {shopifyConnected ? "✓" : "2"}
+                    </span>
+                    <span>Connect Shopify</span>
+                  </button>
+
+                  {/* Step 3 */}
+                  <div
+                    className={`inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-[11px] font-medium ${
+                      hasTestDrop
+                        ? "bg-emerald-500/10 text-emerald-200"
+                        : "bg-slate-900 text-slate-200"
+                    }`}
+                  >
+                    <span
+                      className={`flex h-4 w-4 items-center justify-center rounded-full text-[10px] ${
+                        hasTestDrop
+                          ? "bg-emerald-500/80 text-slate-950"
+                          : "bg-slate-700 text-slate-200"
+                      }`}
+                    >
+                      {hasTestDrop ? "✓" : "3"}
+                    </span>
+                    <span>
+                      Run a test{" "}
+                      <code className="font-mono text-[10px] text-violet-200">
+                        !discount
+                      </code>{" "}
+                      in chat
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </section>
+          )}
 
           {/* TOP ROW */}
           <section className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1.35fr)]">
@@ -565,76 +655,93 @@ export default function HomePage() {
             </section>
           )}
 
-          {/* BOTTOM ROW: DROPS + REDEMPTIONS + ANALYTICS */}
+          {/* BOTTOM ROW: DROPS + REDEMPTIONS + STATS */}
           {login && (
             <section className="grid grid-cols-1 gap-6 xl:grid-cols-3">
               <RecentDropsCard
                 login={login}
                 limit={10}
-                kind="viewer"
                 title="Recent drops"
               />
 
               <RecentRedemptionsCard login={login} limit={10} />
 
+              <StatsCard 
+		login={login as string}
+		stats={stats} 
+		loading={statsLoading}
+		 />
+	      <PlanUsageCard 
+		login={login} />
+	     </div>
+            </section>
+          )}
+
+          {/* COMMANDS & HOW IT WORKS */}
+          {login && (
+            <section>
               <Card>
                 <CardHeader>
-                  <CardTitle>Analytics</CardTitle>
+                  <CardTitle>Commands & how Dropify behaves</CardTitle>
                   <CardDescription>
-                    Today&apos;s performance and revenue influence.
+                    What your viewers can type in chat and what happens behind
+                    the scenes.
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4 text-sm">
-                  {statsLoading && (
-                    <p className="text-xs text-slate-400">Loading…</p>
-                  )}
-
-                  {!statsLoading && stats && (
-                    <div className="grid gap-3 text-xs">
-                      <div>
-                        <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-slate-500">
-                          Drops today
-                        </p>
-                        <p className="mt-1 text-base font-semibold text-slate-50">
-                          {formatNumber(stats.dropsToday)}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-slate-500">
-                          Redemptions today
-                        </p>
-                        <p className="mt-1 text-base font-semibold text-slate-50">
-                          {formatNumber(stats.redemptionsToday)}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-slate-500">
-                          Redemption rate today
-                        </p>
-                        <p className="mt-1 text-base font-semibold text-slate-50">
-                          {Math.round(stats.redemptionRate * 100)}%
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-slate-500">
-                          Revenue influenced (24h)
-                        </p>
-                        <p className="mt-1 text-base font-semibold text-slate-50">
-                          {formatNumber(stats.revenue24h)}
-                        </p>
-                        <p className="mt-1 text-[11px] text-slate-500">
-                          Store currency, last 24 hours.
-                        </p>
-                      </div>
+                  <div className="grid gap-4 md:grid-cols-3">
+                    <div className="rounded-xl border border-white/5 bg-slate-950/70 p-3">
+                      <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-slate-500">
+                        Viewer codes
+                      </p>
+                      <p className="mt-1 font-mono text-xs text-slate-50">
+                        !discount
+                      </p>
+                      <p className="mt-1 text-[11px] text-slate-400">
+                        Viewers get their own one-time discount code. Dropify
+                        respects your cooldown, per-viewer limit and minimum
+                        order subtotal.
+                      </p>
                     </div>
-                  )}
 
-                  {!statsLoading && !stats && (
-                    <p className="text-xs text-slate-400">
-                      No stats yet. Once you start dropping codes and viewers
-                      redeem them, we&apos;ll show performance here.
-                    </p>
-                  )}
+                    <div className="rounded-xl border border-white/5 bg-slate-950/70 p-3">
+                      <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-slate-500">
+                        Global drops
+                      </p>
+                      <p className="mt-1 font-mono text-xs text-slate-50">
+                        !drop 10
+                      </p>
+                      <p className="mt-1 text-[11px] text-slate-400">
+                        Broadcaster-only. Creates a time-limited, unlimited
+                        usage code for everyone in chat (e.g. 10% off for 10
+                        minutes).
+                      </p>
+                    </div>
+
+                    <div className="rounded-xl border border-white/5 bg-slate-950/70 p-3">
+                      <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-slate-500">
+                        Help & info
+                      </p>
+                      <p className="mt-1 font-mono text-xs text-slate-50">
+                        !help
+                      </p>
+                      <p className="mt-1 text-[11px] text-slate-400">
+                        Shows available commands in chat so your viewers know
+                        how to trigger drops without you explaining it every
+                        time.
+                      </p>
+                    </div>
+                  </div>
+
+                  <p className="text-[11px] text-slate-500">
+                    All commands work while the{" "}
+                    <span className="font-mono text-[10px] text-slate-200">
+                      dropifybot
+                    </span>{" "}
+                    account is in your channel and both Twitch + Shopify are
+                    connected. Use the stream performance card to see how often
+                    those codes turn into real orders.
+                  </p>
                 </CardContent>
               </Card>
             </section>
