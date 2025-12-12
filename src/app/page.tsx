@@ -421,6 +421,13 @@ export default function HomePage() {
                       Store currency, last 24 hours.
                     </p>
                   </div>
+		                  {/* Plan usage (inside overview) */}
+                {login && (
+                  <div className="pt-1">
+                    <PlanUsageCard login={login as string} />
+                  </div>
+                )}
+
                 </div>
               </CardContent>
             </Card>
@@ -655,25 +662,12 @@ export default function HomePage() {
             </section>
           )}
 
-          {/* BOTTOM ROW: DROPS + REDEMPTIONS + STATS */}
+          {/* BOTTOM ROW: DROPS + REDEMPTIONS + STATS/PLAN */}
           {login && (
             <section className="grid grid-cols-1 gap-6 xl:grid-cols-3">
-              <RecentDropsCard
-                login={login}
-                limit={10}
-                title="Recent drops"
-              />
-
+              <RecentDropsCard login={login} limit={10} title="Recent drops" />
               <RecentRedemptionsCard login={login} limit={10} />
-
-              <StatsCard 
-		login={login as string}
-		stats={stats} 
-		loading={statsLoading}
-		 />
-	      <PlanUsageCard 
-		login={login} />
-	     </div>
+              <StatsCard login={login} stats={stats} loading={statsLoading}  />
             </section>
           )}
 
