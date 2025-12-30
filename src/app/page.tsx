@@ -301,7 +301,7 @@ export default function HomePage() {
                   today&apos;s performance.
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-6">
                 <div className="flex flex-wrap gap-2 text-xs">
                   <span className="inline-flex items-center gap-1 rounded-full bg-slate-900/80 px-3 py-1 text-[11px] text-emerald-300">
                     <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
@@ -421,14 +421,14 @@ export default function HomePage() {
                       Store currency, last 24 hours.
                     </p>
                   </div>
-		                  {/* Plan usage (inside overview) */}
+                </div>
+
+                {/* Plan usage (inside overview) */}
                 {login && (
-                  <div className="pt-1">
+                  <div className="border-t border-white/5 pt-6">
                     <PlanUsageCard login={login as string} />
                   </div>
                 )}
-
-                </div>
               </CardContent>
             </Card>
 
