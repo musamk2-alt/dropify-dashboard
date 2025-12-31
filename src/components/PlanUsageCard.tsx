@@ -2,8 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 
-const API_URL =
-  process.env.NEXT_PUBLIC_API_URL || "https://api.dropifybot.com";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://api.dropifybot.com";
 
 interface PlanUsageCardProps {
   login: string | null;
@@ -43,7 +42,8 @@ export default function PlanUsageCard({ login }: PlanUsageCardProps) {
   const [upgradeError, setUpgradeError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!login) return;
+    const safeLogin = (login ?? "").toLowerCase();
+    if (!safeLogin) return;
 
     const controller = new AbortController();
 
@@ -53,7 +53,7 @@ export default function PlanUsageCard({ login }: PlanUsageCardProps) {
         setError(null);
 
         const res = await fetch(
-          `${API_URL}/api/plan/${encodeURIComponent(login)}`,
+          `${API_URL}/api/plan/${encodeURIComponent(safeLogin)}`,
           { signal: controller.signal }
         );
 
@@ -64,7 +64,7 @@ export default function PlanUsageCard({ login }: PlanUsageCardProps) {
 
         setData(json);
       } catch (err: any) {
-        if (err.name !== "AbortError") {
+        if (err?.name !== "AbortError") {
           console.error("Plan usage error:", err);
           setError("Failed to load usage.");
         }
@@ -102,7 +102,8 @@ export default function PlanUsageCard({ login }: PlanUsageCardProps) {
       : 0;
 
   async function handleUpgrade(plan: "pro" | "creator" = "pro") {
-    if (!login) return;
+    const safeLogin = (login ?? "").toLowerCase();
+    if (!safeLogin) return;
 
     try {
       setUpgradeLoading(true);
@@ -112,7 +113,7 @@ export default function PlanUsageCard({ login }: PlanUsageCardProps) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          login: login.toLowerCase(),
+          login: safeLogin,
           plan, // "pro" or "creator"
         }),
       });
@@ -152,7 +153,7 @@ export default function PlanUsageCard({ login }: PlanUsageCardProps) {
             {planLabel === "free_beta" ? "Free" : planLabel}
           </span>
 
-          {/* ✅ Stripe Upgrade CTA */}
+          {/* Stripe Upgrade CTA */}
           <button
             type="button"
             onClick={() => handleUpgrade("pro")}
