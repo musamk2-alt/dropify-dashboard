@@ -729,32 +729,20 @@ export default function HomePage() {
                       <p className="mt-1 font-mono text-xs text-slate-50">
                         !help
                       </p>
-			</p>
-<p className="mt-1 text-[11px] text-slate-400">
-  Shows available commands in chat so your viewers know
-  how to trigger drops without you explaining it every
-  time.
-</p>
-</div>
-</div>
-
-<p className="text-[11px] text-slate-500">
-  All commands work while the{" "}
-  <span className="font-mono text-[10px] text-slate-200">
-    dropifybot
-  </span>{" "}
-			  account is in your channel and both Twitch + Shopify are
-			  connected. Use the stream performance card to see how often
-			  those codes turn into real orders.
-	</p>
-
-                  </p>
-                </CardContent>
-              </Card>
-            </section>
-          )}
-        </div>
-      </main>
-    </DashboardShell>
-  );
-}
+                      <p className="mt-1 text-[11px] text-slate-400
+			<p className="text-[11px] text-slate-500">
+                All commands work while the{" "}
+                <span className="font-mono text-[10px] text-slate-200">
+                  dropifybot
+                </span>{" "}
+                account is in your channel and both Twitch + Shopify are
+                connected. Use the stream performance card to see how often
+                those codes turn into real orders.
+              </p>
+            </CardContent>
+          </Card>
+        </section>
+      )}
+    </div>
+  </main>
+</DashboardShell>	
