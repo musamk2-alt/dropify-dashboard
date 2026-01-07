@@ -12,6 +12,12 @@ interface PlanUsageCardProps {
 type PlanApiResponse = {
   ok: boolean;
   plan: string;
+
+  // optional lifecycle fields (safe even if API doesn't return them yet)
+  billingStatus?: string;
+  pendingPlan?: string | null;
+  currentPeriodEnd?: string | null; // ISO string if returned by API
+
   limits: {
     viewerDropsPerMonth: number | null;
     globalDropsPerMonth: number | null;
@@ -29,6 +35,12 @@ type PlanApiResponse = {
 };
 
 type CheckoutResponse = {
+  ok: boolean;
+  url?: string;
+  error?: string;
+};
+
+type PortalResponse = {
   ok: boolean;
   url?: string;
   error?: string;
@@ -59,6 +71,9 @@ export default function PlanUsageCard({ login }: PlanUsageCardProps) {
 
   const [upgradeLoading, setUpgradeLoading] = useState(false);
   const [upgradeError, setUpgradeError] = useState<string | null>(null);
+
+  const [billingLoading, setBillingLoading] = useState(false);
+  const [billingError, setBillingError] = useState<string | null>(null);
 
   const safeLogin = useMemo(() => (login ?? "").toLowerCase(), [login]);
 
@@ -116,14 +131,11 @@ export default function PlanUsageCard({ login }: PlanUsageCardProps) {
 
     (async () => {
       try {
-        // refresh usage after webhook likely updated plan
         await fetchUsage(controller.signal);
       } catch (e) {
-        // don't block UI on this; user can refresh manually
         console.error("Auto-refresh after upgrade failed:", e);
       }
 
-      // remove upgrade param from URL (keep login param if present)
       try {
         const current = new URL(window.location.href);
         current.searchParams.delete("upgrade");
@@ -160,6 +172,12 @@ export default function PlanUsageCard({ login }: PlanUsageCardProps) {
   const resetsInDays = useMemo(() => {
     return daysUntil(data?.period?.now, data?.period?.monthEnd);
   }, [data?.period?.now, data?.period?.monthEnd]);
+
+  const pendingPlan = (data?.pendingPlan ?? null) ? String(data?.pendingPlan).toLowerCase() : null;
+  const pendingDays = useMemo(() => {
+    if (!data?.period?.now || !data?.currentPeriodEnd) return null;
+    return daysUntil(data.period.now, data.currentPeriodEnd);
+  }, [data?.period?.now, data?.currentPeriodEnd]);
 
   // 🔔 80% warning (only if there is a numeric limit)
   const warnings = useMemo(() => {
@@ -209,13 +227,64 @@ export default function PlanUsageCard({ login }: PlanUsageCardProps) {
     }
   }
 
+  async function handleManageBilling() {
+    if (!safeLogin) return;
+
+    try {
+      setBillingLoading(true);
+      setBillingError(null);
+
+      const res = await fetch(`${API_URL}/api/stripe/create-portal`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ login: safeLogin }),
+      });
+
+      const json = (await res.json()) as PortalResponse;
+
+      if (!res.ok || !json?.ok || !json.url) {
+        throw new Error(json?.error || "Failed to open billing portal.");
+      }
+
+      window.location.href = json.url;
+    } catch (err: any) {
+      console.error("Billing portal error:", err);
+      setBillingError(err?.message || "Billing portal failed.");
+    } finally {
+      setBillingLoading(false);
+    }
+  }
+
   const planLabel = data?.plan ? data.plan : "—";
   const normalizedPlan = (data?.plan || "").toLowerCase();
   const isProOrAbove = normalizedPlan === "pro" || normalizedPlan === "creator";
   const isCreator = normalizedPlan === "creator";
 
+  const showPendingBanner =
+    !!pendingPlan &&
+    pendingPlan !== normalizedPlan &&
+    (pendingDays !== null || !!data?.currentPeriodEnd);
+
   return (
     <div className="w-full rounded-xl border border-white/5 bg-slate-950/70 px-5 py-4">
+      {/* 🕒 Pending plan change banner */}
+      {showPendingBanner && (
+        <div className="mb-4 rounded-lg border border-sky-500/20 bg-sky-500/10 px-4 py-3">
+          <p className="text-[12px] font-medium text-sky-200">
+            Plan change scheduled.
+          </p>
+          <p className="mt-1 text-[11px] text-sky-100/90">
+            Your plan will change to{" "}
+            <span className="font-medium">{pendingPlan}</span>
+            {pendingDays !== null ? (
+              <> in <span className="font-medium">{pendingDays}</span> day{pendingDays === 1 ? "" : "s"}.</>
+            ) : (
+              <> at the end of your billing period.</>
+            )}
+          </p>
+        </div>
+      )}
+
       {/* 🔔 80% warning banner */}
       {warnings.length > 0 && (
         <div className="mb-4 rounded-lg border border-amber-500/20 bg-amber-500/10 px-4 py-3">
@@ -269,7 +338,7 @@ export default function PlanUsageCard({ login }: PlanUsageCardProps) {
             {planLabel === "free_beta" ? "Free" : planLabel}
           </span>
 
-          {/* Stripe Upgrade CTAs */}
+          {/* Stripe controls */}
           <div className="flex items-center gap-2">
             <button
               type="button"
@@ -297,6 +366,20 @@ export default function PlanUsageCard({ login }: PlanUsageCardProps) {
               title={isCreator ? "You already have Creator" : "Upgrade to Creator"}
             >
               {upgradeLoading ? "Redirecting…" : "Creator"}
+            </button>
+
+            <button
+              type="button"
+              onClick={handleManageBilling}
+              disabled={!login || billingLoading}
+              className={[
+                "inline-flex items-center justify-center rounded-lg px-3 py-2 text-[11px] font-medium transition",
+                "bg-slate-800/60 text-slate-200 hover:bg-slate-800",
+                "disabled:opacity-60 disabled:hover:bg-slate-800/60",
+              ].join(" ")}
+              title="Manage billing"
+            >
+              {billingLoading ? "Opening…" : "Manage"}
             </button>
           </div>
         </div>
@@ -370,6 +453,7 @@ export default function PlanUsageCard({ login }: PlanUsageCardProps) {
       {loading && <p className="mt-2 text-[11px] text-slate-400">Loading usage…</p>}
       {error && <p className="mt-2 text-[11px] text-red-400">{error}</p>}
       {upgradeError && <p className="mt-2 text-[11px] text-red-400">{upgradeError}</p>}
+      {billingError && <p className="mt-2 text-[11px] text-red-400">{billingError}</p>}
     </div>
   );
 }
