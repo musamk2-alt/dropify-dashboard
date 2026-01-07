@@ -2,14 +2,15 @@
 
 import { useEffect, useState } from "react";
 
-import RecentRedemptionsCard from "../components/RecentRedemptionsCard";
-import StreamerSettingsCard from "../components/StreamerSettingsCard";
-import RecentDropsCard from "../components/RecentDropsCard";
-import StatsCard from "../components/StatsCard";
-import PlanUsageCard from "../components/PlanUsageCard";
+import RecentRedemptionsCard from "../../components/RecentRedemptionsCard";
+import StreamerSettingsCard from "../../components/StreamerSettingsCard";
+import RecentDropsCard from "../../components/RecentDropsCard";
+import StatsCard from "../../components/StatsCard";
+import PlanUsageCard from "../../components/PlanUsageCard";
+import ExportButton from "../../components/ExportButton";
 
-import { DashboardShell } from "../components/layout/dashboard-shell";
-import { DashboardNavbar } from "../components/layout/dashboard-navbar";
+import { DashboardShell } from "../../components/layout/dashboard-shell";
+import { DashboardNavbar } from "../../components/layout/dashboard-navbar";
 
 import {
   Card,
@@ -17,8 +18,8 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from "../components/ui/card";
-import { Button } from "../components/ui/button";
+} from "../../components/ui/card";
+import { Button } from "../../components/ui/button";
 
 const API_URL =
   process.env.NEXT_PUBLIC_API_URL || "https://api.dropifybot.com";
@@ -664,10 +665,19 @@ export default function HomePage() {
 
           {/* BOTTOM ROW: DROPS + REDEMPTIONS + STATS/PLAN */}
           {login && (
-            <section className="grid grid-cols-1 gap-6 xl:grid-cols-3">
-              <RecentDropsCard login={login} limit={10} title="Recent drops" />
-              <RecentRedemptionsCard login={login} limit={10} />
-              <StatsCard login={login} stats={stats} loading={statsLoading}  />
+            <section className="space-y-4">
+              {/* Export Button Header */}
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-semibold text-slate-200">Activity & Analytics</h2>
+                <ExportButton twitchLogin={login} />
+              </div>
+
+              {/* Cards Grid */}
+              <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
+                <RecentDropsCard login={login} limit={10} title="Recent drops" />
+                <RecentRedemptionsCard login={login} limit={10} />
+                <StatsCard login={login} stats={stats} loading={statsLoading} />
+              </div>
             </section>
           )}
 
@@ -719,22 +729,25 @@ export default function HomePage() {
                       <p className="mt-1 font-mono text-xs text-slate-50">
                         !help
                       </p>
-                      <p className="mt-1 text-[11px] text-slate-400">
-                        Shows available commands in chat so your viewers know
-                        how to trigger drops without you explaining it every
-                        time.
-                      </p>
-                    </div>
-                  </div>
+			</p>
+<p className="mt-1 text-[11px] text-slate-400">
+  Shows available commands in chat so your viewers know
+  how to trigger drops without you explaining it every
+  time.
+</p>
+</div>
+</div>
 
-                  <p className="text-[11px] text-slate-500">
-                    All commands work while the{" "}
-                    <span className="font-mono text-[10px] text-slate-200">
-                      dropifybot
-                    </span>{" "}
-                    account is in your channel and both Twitch + Shopify are
-                    connected. Use the stream performance card to see how often
-                    those codes turn into real orders.
+<p className="text-[11px] text-slate-500">
+  All commands work while the{" "}
+  <span className="font-mono text-[10px] text-slate-200">
+    dropifybot
+  </span>{" "}
+			  account is in your channel and both Twitch + Shopify are
+			  connected. Use the stream performance card to see how often
+			  those codes turn into real orders.
+	</p>
+
                   </p>
                 </CardContent>
               </Card>
