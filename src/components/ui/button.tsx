@@ -2,10 +2,21 @@
 
 import * as React from "react";
 
-type ButtonBaseProps = React.ButtonHTMLAttributes<HTMLButtonElement>;
+type ButtonBaseProps =
+  React.ButtonHTMLAttributes<HTMLButtonElement>;
 
-type ButtonVariant = "primary" | "secondary" | "ghost" | "outline";
-type ButtonSize = "sm" | "md" | "lg" | "icon";
+type ButtonVariant =
+  | "primary"
+  | "secondary"
+  | "ghost"
+  | "outline"
+  | "danger";
+
+type ButtonSize =
+  | "sm"
+  | "md"
+  | "lg"
+  | "icon";
 
 interface ButtonProps extends ButtonBaseProps {
   variant?: ButtonVariant;
@@ -13,77 +24,90 @@ interface ButtonProps extends ButtonBaseProps {
   isLoading?: boolean;
 }
 
-/**
- * Reusable button component with Dropify styling.
- */
-export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  (
-    {
-      className,
-      variant = "primary",
-      size = "md",
-      isLoading = false,
-      disabled,
-      children,
-      ...props
-    },
-    ref
-  ) => {
-    const variantStyles: Record<ButtonVariant, string> = {
-      primary:
-        "bg-gradient-to-r from-[#a855f7] via-[#6366f1] to-[#22c55e] " +
-        "text-slate-50 shadow-lg shadow-indigo-500/30 " +
-        "hover:brightness-110 active:brightness-95 border border-white/10",
-      secondary:
-        "bg-slate-900/80 text-slate-100 border border-white/10 " +
-        "hover:bg-slate-900 hover:border-white/20",
-      ghost:
-        "bg-transparent text-slate-200 hover:bg-slate-900/60 border border-transparent",
-      outline:
-        "bg-transparent text-slate-100 border border-slate-500/40 " +
-        "hover:border-slate-300/70 hover:bg-slate-900/60",
-    };
+export const Button =
+  React.forwardRef<HTMLButtonElement, ButtonProps>(
+    (
+      {
+        className,
+        variant = "primary",
+        size = "md",
+        isLoading = false,
+        disabled,
+        children,
+        ...props
+      },
+      ref
+    ) => {
+      const variantStyles:
+        Record<ButtonVariant, string> = {
+        primary:
+          "border border-violet-400/20 bg-violet-600 text-white " +
+          "shadow-[0_8px_22px_rgba(124,58,237,0.2)] " +
+          "hover:bg-violet-500 active:bg-violet-700",
 
-    const sizeStyles: Record<ButtonSize, string> = {
-      sm: "h-8 px-3 text-xs rounded-xl",
-      md: "h-9 px-4 text-sm rounded-xl",
-      lg: "h-11 px-5 text-sm sm:text-base rounded-2xl",
-      icon: "h-9 w-9 rounded-full flex items-center justify-center",
-    };
+        secondary:
+          "border border-slate-700 bg-slate-900 text-slate-200 " +
+          "hover:border-slate-600 hover:bg-slate-800",
 
-    const base =
-      "inline-flex items-center justify-center gap-2 font-medium " +
-      "transition-all duration-150 focus-visible:outline-none " +
-      "focus-visible:ring-2 focus-visible:ring-offset-2 " +
-      "focus-visible:ring-offset-slate-950 focus-visible:ring-indigo-500 " +
-      "disabled:cursor-not-allowed disabled:opacity-60";
+        ghost:
+          "border border-transparent bg-transparent text-slate-400 " +
+          "hover:bg-slate-900 hover:text-slate-100",
 
-    const classes = [
-      base,
-      variantStyles[variant],
-      sizeStyles[size],
-      className,
-    ]
-      .filter(Boolean)
-      .join(" ");
+        outline:
+          "border border-slate-700 bg-transparent text-slate-300 " +
+          "hover:border-slate-600 hover:bg-slate-900 hover:text-white",
 
-    return (
-      <button
-        ref={ref}
-        className={classes}
-        disabled={disabled || isLoading}
-        {...props}
-      >
-        {isLoading && (
-          <span
-            className="inline-flex h-4 w-4 animate-spin rounded-full border-[2px] border-slate-100/60 border-t-transparent"
-            aria-hidden="true"
-          />
-        )}
-        <span className={isLoading ? "opacity-80" : undefined}>{children}</span>
-      </button>
-    );
-  }
-);
+        danger:
+          "border border-red-500/20 bg-red-500/10 text-red-300 " +
+          "hover:bg-red-500/15 hover:text-red-200",
+      };
+
+      const sizeStyles:
+        Record<ButtonSize, string> = {
+        sm: "h-8 rounded-lg px-3 text-xs",
+        md: "h-9 rounded-lg px-4 text-sm",
+        lg: "h-10 rounded-xl px-4 text-sm",
+        icon:
+          "h-9 w-9 rounded-lg p-0",
+      };
+
+      const classes = [
+        "inline-flex items-center justify-center gap-2 font-medium",
+        "transition-colors duration-150",
+        "focus-visible:outline-none focus-visible:ring-2",
+        "focus-visible:ring-violet-500/60 focus-visible:ring-offset-2",
+        "focus-visible:ring-offset-[#06080d]",
+        "disabled:cursor-not-allowed disabled:opacity-50",
+        variantStyles[variant],
+        sizeStyles[size],
+        className,
+      ]
+        .filter(Boolean)
+        .join(" ");
+
+      return (
+        <button
+          ref={ref}
+          className={classes}
+          disabled={
+            disabled ||
+            isLoading
+          }
+          {...props}
+        >
+          {isLoading && (
+            <span
+              aria-hidden="true"
+              className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent opacity-70"
+            />
+          )}
+
+          <span>
+            {children}
+          </span>
+        </button>
+      );
+    }
+  );
 
 Button.displayName = "Button";

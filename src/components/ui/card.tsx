@@ -3,57 +3,114 @@ import * as React from "react";
 type DivProps = React.HTMLAttributes<HTMLDivElement>;
 
 interface CardProps extends DivProps {
-  glow?: boolean;
+  elevated?: boolean;
 }
 
-/**
- * Base glassy card used across the Dropify dashboard.
- * All cards use the same hover / glow behaviour for consistency.
- */
-export function Card({ className, glow = true, ...props }: CardProps) {
-  const base =
-    "relative rounded-2xl border border-white/5 bg-slate-950/60 " +
-    "backdrop-blur-md shadow-[0_18px_45px_rgba(0,0,0,0.65)] " +
-    "transition-all duration-200 hover:-translate-y-[1px] hover:border-white/10";
+export function Card({
+  className,
+  elevated = false,
+  ...props
+}: CardProps) {
+  const classes = [
+    "relative overflow-hidden rounded-2xl border border-slate-800/90",
+    "bg-[#0b0f17] text-slate-100",
+    elevated
+      ? "shadow-[0_18px_50px_rgba(0,0,0,0.28)]"
+      : "shadow-[0_8px_28px_rgba(0,0,0,0.16)]",
+    className,
+  ]
+    .filter(Boolean)
+    .join(" ");
 
-  const glowClasses =
-    glow &&
-    " before:pointer-events-none before:absolute before:inset-px " +
-      "before:rounded-[1rem] before:bg-gradient-to-b " +
-      "before:from-white/10 before:to-transparent before:opacity-60";
-
-  const merged = [base, glowClasses, className].filter(Boolean).join(" ");
-
-  return <div className={merged} {...props} />;
+  return (
+    <div
+      className={classes}
+      {...props}
+    />
+  );
 }
 
-export function CardHeader({ className, ...props }: DivProps) {
-  const base = "flex flex-col gap-1 border-b border-white/5 px-5 pt-4 pb-4";
-  const merged = [base, className].filter(Boolean).join(" ");
-  return <div className={merged} {...props} />;
+export function CardHeader({
+  className,
+  ...props
+}: DivProps) {
+  return (
+    <div
+      className={[
+        "flex flex-col gap-1.5 border-b border-slate-800/80 px-5 py-4 sm:px-6",
+        className,
+      ]
+        .filter(Boolean)
+        .join(" ")}
+      {...props}
+    />
+  );
 }
 
-export function CardTitle({ className, ...props }: DivProps) {
-  const base = "text-sm sm:text-base font-semibold tracking-tight text-slate-50";
-  const merged = [base, className].filter(Boolean).join(" ");
-  return <h3 className={merged} {...props} />;
+export function CardTitle({
+  className,
+  ...props
+}: DivProps) {
+  return (
+    <h3
+      className={[
+        "text-sm font-semibold tracking-tight text-slate-100 sm:text-base",
+        className,
+      ]
+        .filter(Boolean)
+        .join(" ")}
+      {...props}
+    />
+  );
 }
 
-export function CardDescription({ className, ...props }: DivProps) {
-  const base = "text-xs sm:text-sm text-slate-400";
-  const merged = [base, className].filter(Boolean).join(" ");
-  return <p className={merged} {...props} />;
+export function CardDescription({
+  className,
+  ...props
+}: DivProps) {
+  return (
+    <p
+      className={[
+        "text-xs leading-5 text-slate-500 sm:text-sm",
+        className,
+      ]
+        .filter(Boolean)
+        .join(" ")}
+      {...props}
+    />
+  );
 }
 
-export function CardContent({ className, ...props }: DivProps) {
-  const base = "px-5 pb-5 pt-4";
-  const merged = [base, className].filter(Boolean).join(" ");
-  return <div className={merged} {...props} />;
+export function CardContent({
+  className,
+  ...props
+}: DivProps) {
+  return (
+    <div
+      className={[
+        "px-5 py-5 sm:px-6",
+        className,
+      ]
+        .filter(Boolean)
+        .join(" ")}
+      {...props}
+    />
+  );
 }
 
-export function CardFooter({ className, ...props }: DivProps) {
-  const base =
-    "flex items-center justify-between gap-3 px-5 pb-4 pt-3 border-t border-white/5";
-  const merged = [base, className].filter(Boolean).join(" ");
-  return <div className={merged} {...props} />;
+export function CardFooter({
+  className,
+  ...props
+}: DivProps) {
+  return (
+    <div
+      className={[
+        "flex items-center justify-between gap-3 border-t border-slate-800/80 px-5 py-4 sm:px-6",
+        className,
+      ]
+        .filter(Boolean)
+        .join(" ")}
+      {...props}
+    />
+  );
 }

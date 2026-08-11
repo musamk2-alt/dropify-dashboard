@@ -1,5 +1,8 @@
 "use client";
 
+import { isAbortError } from "@/lib/error-utils";
+import { apiFetch } from "@/lib/api-fetch";
+
 import React, { useEffect, useState } from "react";
 import {
   Card,
@@ -28,6 +31,7 @@ interface RecentDropsCardProps {
   limit?: number;
   kind?: "viewer" | "global" | "all";
   title?: string;
+  compact?: boolean;
 }
 
 function formatDateTime(iso: string) {
@@ -53,6 +57,7 @@ const RecentDropsCard: React.FC<RecentDropsCardProps> = ({
   limit = 10,
   kind = "all",
   title,
+  compact = false,
 }) => {
   const [drops, setDrops] = useState<Drop[]>([]);
   const [loading, setLoading] = useState(false);
@@ -75,7 +80,7 @@ const RecentDropsCard: React.FC<RecentDropsCardProps> = ({
           login
         )}/recent?limit=${limit}`;
 
-        const res = await fetch(url, {
+        const res = await apiFetch(url, {
           method: "GET",
           signal: controller.signal,
         });
@@ -89,8 +94,10 @@ const RecentDropsCard: React.FC<RecentDropsCardProps> = ({
         if (!data.ok) throw new Error(data.error || "Failed to load drops");
 
         setDrops(data.drops || []);
-      } catch (err: any) {
-        if (err.name === "AbortError") return;
+      } catch (err: unknown) {
+        if (isAbortError(err)) {
+          return;
+        }
         console.error("[RecentDropsCard] Failed to load", err);
         setError("Failed to load recent drops.");
       } finally {

@@ -1,5 +1,8 @@
 "use client";
 
+import { getErrorMessage, isAbortError } from "@/lib/error-utils";
+import { apiFetch } from "@/lib/api-fetch";
+
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
@@ -13,10 +16,12 @@ type PlanApiResponse = {
   ok: boolean;
   plan: string;
 
-  // optional lifecycle fields (safe even if API doesn't return them yet)
+  // Billing + lifecycle state.
+  hasBillingAccount?: boolean;
+  hasSubscription?: boolean;
   billingStatus?: string;
   pendingPlan?: string | null;
-  currentPeriodEnd?: string | null; // ISO string if returned by API
+  currentPeriodEnd?: string | null;
 
   limits: {
     viewerDropsPerMonth: number | null;
@@ -81,7 +86,7 @@ export default function PlanUsageCard({ login }: PlanUsageCardProps) {
     async (signal?: AbortSignal) => {
       if (!safeLogin) return;
 
-      const res = await fetch(
+      const res = await apiFetch(
         `${API_URL}/api/plan/${encodeURIComponent(safeLogin)}`,
         { signal }
       );
@@ -106,8 +111,8 @@ export default function PlanUsageCard({ login }: PlanUsageCardProps) {
         setLoading(true);
         setError(null);
         await fetchUsage(controller.signal);
-      } catch (err: any) {
-        if (err?.name !== "AbortError") {
+      } catch (err: unknown) {
+        if (!isAbortError(err)) {
           console.error("Plan usage error:", err);
           setError("Failed to load usage.");
         }
@@ -140,7 +145,7 @@ export default function PlanUsageCard({ login }: PlanUsageCardProps) {
         const current = new URL(window.location.href);
         current.searchParams.delete("upgrade");
         router.replace(`${current.pathname}?${current.searchParams.toString()}`);
-      } catch (_) {}
+      } catch {}
     })();
 
     return () => controller.abort();
@@ -203,7 +208,7 @@ export default function PlanUsageCard({ login }: PlanUsageCardProps) {
       setUpgradeLoading(true);
       setUpgradeError(null);
 
-      const res = await fetch(`${API_URL}/api/stripe/create-checkout`, {
+      const res = await apiFetch(`${API_URL}/api/stripe/create-checkout`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -219,9 +224,14 @@ export default function PlanUsageCard({ login }: PlanUsageCardProps) {
       }
 
       window.location.href = json.url;
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Upgrade error:", err);
-      setUpgradeError(err?.message || "Upgrade failed.");
+      setUpgradeError(
+        getErrorMessage(
+          err,
+          "Upgrade failed."
+        )
+      );
     } finally {
       setUpgradeLoading(false);
     }
@@ -234,7 +244,7 @@ export default function PlanUsageCard({ login }: PlanUsageCardProps) {
       setBillingLoading(true);
       setBillingError(null);
 
-      const res = await fetch(`${API_URL}/api/stripe/create-portal`, {
+      const res = await apiFetch(`${API_URL}/api/stripe/create-portal`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ login: safeLogin }),
@@ -247,9 +257,14 @@ export default function PlanUsageCard({ login }: PlanUsageCardProps) {
       }
 
       window.location.href = json.url;
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Billing portal error:", err);
-      setBillingError(err?.message || "Billing portal failed.");
+      setBillingError(
+        getErrorMessage(
+          err,
+          "Billing portal failed."
+        )
+      );
     } finally {
       setBillingLoading(false);
     }
@@ -259,6 +274,11 @@ export default function PlanUsageCard({ login }: PlanUsageCardProps) {
   const normalizedPlan = (data?.plan || "").toLowerCase();
   const isProOrAbove = normalizedPlan === "pro" || normalizedPlan === "creator";
   const isCreator = normalizedPlan === "creator";
+
+  const hasBillingAccount =
+    Boolean(
+      data?.hasBillingAccount
+    );
 
   const showPendingBanner =
     !!pendingPlan &&
@@ -371,13 +391,21 @@ export default function PlanUsageCard({ login }: PlanUsageCardProps) {
             <button
               type="button"
               onClick={handleManageBilling}
-              disabled={!login || billingLoading}
+              disabled={
+                !login ||
+                billingLoading ||
+                !hasBillingAccount
+              }
               className={[
                 "inline-flex items-center justify-center rounded-lg px-3 py-2 text-[11px] font-medium transition",
                 "bg-slate-800/60 text-slate-200 hover:bg-slate-800",
                 "disabled:opacity-60 disabled:hover:bg-slate-800/60",
               ].join(" ")}
-              title="Manage billing"
+              title={
+                hasBillingAccount
+                  ? "Manage billing"
+                  : "No Stripe billing account is linked"
+              }
             >
               {billingLoading ? "Opening…" : "Manage"}
             </button>
